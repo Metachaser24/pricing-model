@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cr3dentials — Platform Pricing Model</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+    --border: #2e3248; --text: #e8eaf0; --muted: #7c82a0;
+    --blue: #4a9eff; --green: #34d399; --amber: #fbbf24; --red: #f87171;
+    --teal: #2dd4bf; --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  .header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; background: rgba(74,158,255,0.15); color: var(--blue); border: 1px solid rgba(74,158,255,0.3); }
+  .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 57px); }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
+  .main { padding: 20px; overflow-y: auto; }
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; margin-bottom: 12px; margin-top: 20px; }
+  .section-title:first-child { margin-top: 0; }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .control label span { color: var(--text); font-weight: 500; }
+  input[type=range] { width: 100%; accent-color: var(--blue); cursor: pointer; }
+  select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  select:focus { outline: none; border-color: var(--blue); }
+  .mix-total { font-size: 11px; padding: 6px 10px; border-radius: 6px; margin-top: 4px; text-align: center; font-weight: 500; }
+  .mix-ok { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+  .mix-warn { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+  /* Platform table */
+  .platforms-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .btn-add { font-size: 12px; padding: 5px 12px; background: rgba(74,158,255,0.1); border: 1px solid rgba(74,158,255,0.3); color: var(--blue); border-radius: 6px; cursor: pointer; }
+  .btn-add:hover { background: rgba(74,158,255,0.2); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  th:not(:first-child) { text-align: right; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td:not(:first-child) { text-align: right; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .platform-name { font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 10px; padding: 2px 7px; border-radius: 99px; }
+  .pill-slow { background: rgba(248,113,113,0.15); color: var(--red); }
+  .pill-fast { background: rgba(52,211,153,0.15); color: var(--green); }
+  .editable { background: rgba(74,158,255,0.08); border: 1px solid rgba(74,158,255,0.2); border-radius: 4px; padding: 3px 6px; width: 70px; color: var(--blue); font-size: 12px; text-align: right; }
+  .editable:focus { outline: none; border-color: var(--blue); background: rgba(74,158,255,0.15); }
+  .btn-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
+  .btn-del:hover { color: var(--red); background: rgba(248,113,113,0.1); }
+  .val-green { color: var(--green); font-weight: 500; }
+  .val-amber { color: var(--amber); font-weight: 500; }
+  .val-red { color: var(--red); font-weight: 500; }
+  .val-blue { color: var(--blue); font-weight: 500; }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .card-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .card-value { font-size: 22px; font-weight: 600; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface); border-radius: 8px; padding: 4px; width: fit-content; }
+  .tab { padding: 6px 16px; font-size: 12px; border-radius: 6px; cursor: pointer; background: none; border: none; color: var(--muted); font-weight: 500; }
+  .tab.active { background: var(--surface2); color: var(--text); }
+
+  /* Pricing panel */
+  .pricing-table { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .pricing-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .pricing-row:last-child { border-bottom: none; }
+  .pricing-row.highlight { background: var(--surface2); }
+  .pricing-row .lbl { color: var(--muted); }
+  .pricing-row strong { color: var(--text); }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+  .alert-green { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); color: #6ee7b7; }
+  .alert-amber { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); color: #fcd34d; }
+
+  /* Chart */
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .chart-inner { position: relative; height: 220px; }
+  .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+  .chart-legend span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .chart-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  /* Add platform modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 360px; }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .modal .field input, .modal .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+  .modal .field input:focus { outline: none; border-color: var(--blue); }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .btn-cancel { padding: 7px 16px; background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn-save { padding: 7px 16px; background: var(--blue); border: none; color: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn-save:hover { opacity: 0.9; }
+  
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Cr3dentials — Platform Pricing Model</h1>
+    <div class="sub">Per-platform unit economics · Add platforms as you expand</div>
+  </div>
+  <span class="badge">v1.0</span>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR: Global inputs -->
+  <div class="sidebar">
+    <div class="section-title">Infrastructure</div>
+
+    <div class="control">
+      <label>Proxy rate<span id="px-lbl"></span></label>
+      <select id="proxy-sel" onchange="recalc()">
+        <option value="1.125">Standard — $1.125/10GB</option>
+        <option value="0.1125" selected>Cheap — $0.1125/10GB</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Hyperbrowser<span id="hb-lbl"></span></label>
+      <select id="hb-mode" onchange="recalc()">
+        <option value="cloud">Cloud ($0.10/hr)</option>
+        <option value="self">Self-hosted ($25/mo flat)</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Primus tier<span id="pr-lbl"></span></label>
+      <select id="primus-sel" onchange="recalc()">
+        <option value="100,1000">1,000 verifs — $100/mo</option>
+        <option value="425,5000" selected>5,000 verifs — $425/mo</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Data per verification<span id="data-lbl">5 MB</span></label>
+      <input type="range" id="data-mb" min="1" max="50" step="1" value="5" oninput="recalc()">
+    </div>
+    <div class="control">
+      <label>Monthly verifications (total)<span id="vol-lbl">5,000</span></label>
+      <input type="range" id="vol" min="100" max="50000" step="100" value="5000" oninput="recalc()">
+    </div>
+
+    <div class="section-title">Platform Mix</div>
+    <div id="mix-controls"></div>
+    <div id="mix-total" class="mix-total mix-ok">Mix: 100%</div>
+
+    <div class="section-title" style="margin-top:20px">Global Fixed Costs</div>
+    <div style="font-size:12px;color:var(--muted);line-height:2">
+      Railway: <span style="color:var(--text)">$20/mo</span><br>
+      Primus: <span id="primus-display" style="color:var(--text)">$425/mo</span><br>
+      HB (self-host): <span id="hb-fixed-display" style="color:var(--text)">—</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <!-- Summary cards -->
+    <div class="cards" id="summary-cards"></div>
+
+    <!-- Platform breakdown table -->
+    <div class="platforms-header">
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-weight:600">Platform Breakdown</span>
+      <button class="btn-add" onclick="openModal()">+ Add platform</button>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+      <table id="platform-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Session hrs</th>
+            <th>HB cost/verif</th>
+            <th>Total cost/verif</th>
+            <th>Charge/verif</th>
+            <th>Margin</th>
+            <th>Mo. profit</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="platform-tbody"></tbody>
+        <tfoot id="platform-tfoot"></tfoot>
+      </table>
+    </div>
+
+    <!-- Pricing tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('flat',this)">Flat rate</button>
+      <button class="tab" onclick="switchTab('tiered',this)">Platform tiers</button>
+      <button class="tab" onclick="switchTab('perplat',this)">Per-platform pricing</button>
+    </div>
+    <div id="model-content"></div>
+
+    <!-- Chart -->
+    <div class="chart-wrap">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:12px;font-weight:600">Margin vs volume by platform</div>
+      <div class="chart-inner"><canvas id="mainChart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Platform Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Add platform</h3>
+    <div class="field"><label>Platform name</label><input type="text" id="m-name" placeholder="e.g. Glovo"></div>
+    <div class="field"><label>Avg session duration (hrs)</label><input type="number" id="m-hrs" value="0.5" min="0.1" max="8" step="0.1"></div>
+    <div class="field"><label>Speed profile</label>
+      <select id="m-speed">
+        <option value="fast">Fast (&lt;1hr)</option>
+        <option value="slow">Rate limited / slow</option>
+      </select>
+    </div>
+    <div class="field"><label>Default charge per verification ($)</label><input type="number" id="m-price" value="0.75" min="0.01" max="10" step="0.01"></div>
+    <div class="field"><label>Mix share (%)</label><input type="number" id="m-mix" value="10" min="1" max="100" step="1"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="addPlatform()">Add platform</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let platforms = [
+  { id:'uber',   name:'Uber',     hrs:2.5,  speed:'slow', price:1.50, mix:40 },
+  { id:'shop',   name:'Shopify',  hrs:0.3,  speed:'fast', price:0.75, mix:30 },
+  { id:'yt',     name:'YouTube',  hrs:0.4,  speed:'fast', price:1.00, mix:20 },
+  { id:'stripe', name:'Stripe',   hrs:0.2,  speed:'fast', price:0.50, mix:10 },
+];
+let currentTab = 'flat';
+let chartInst = null;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const fmt  = (n,d=4) => '$'+n.toFixed(d);
+const fmtB = n => '$'+Math.round(n).toLocaleString();
+const fmtP = n => (n*100).toFixed(1)+'%';
+const COLORS = ['#f87171','#34d399','#4a9eff','#fbbf24','#a78bfa','#2dd4bf','#fb923c','#e879f9'];
+const colorOf = i => COLORS[i % COLORS.length];
+
+function getGlobals() {
+  const proxyPPG   = parseFloat(document.getElementById('proxy-sel').value);
+  const hbMode     = document.getElementById('hb-mode').value;
+  const primusRaw  = document.getElementById('primus-sel').value.split(',');
+  const primusCost = parseFloat(primusRaw[0]);
+  const primusVol  = parseFloat(primusRaw[1]);
+  const dataMB     = parseFloat(document.getElementById('data-mb').value);
+  const vol        = parseInt(document.getElementById('vol').value);
+  const proxyPerV  = (dataMB/1024)*proxyPPG;
+  const primusPerV = primusCost/primusVol;
+  const railMo = 20;
+  const hbFixed = hbMode==='self' ? 25 : 0;
+  return { proxyPPG, hbMode, primusCost, primusVol, dataMB, vol,
+           proxyPerV, primusPerV, railMo, hbFixed };
+}
+
+function hbCostPerVerif(p, g) {
+  if (g.hbMode==='self') return g.hbFixed / g.vol;
+  return p.hrs * 0.10;
+}
+
+function costPerVerif(p, g) {
+  return g.proxyPerV + g.primusPerV + (g.railMo/g.vol) + hbCostPerVerif(p,g);
+}
+
+function getMarginClass(m) {
+  if(m > 0.7) return 'val-green';
+  if(m > 0.45) return 'val-amber';
+  return 'val-red';
+}
+
+// ── Recalc ─────────────────────────────────────────────────────────────────
+function recalc() {
+  const g = getGlobals();
+  document.getElementById('data-lbl').textContent = g.dataMB+' MB';
+  document.getElementById('vol-lbl').textContent = g.vol.toLocaleString();
+  document.getElementById('hb-lbl').textContent = g.hbMode==='cloud' ? 'Cloud' : 'Self-hosted';
+  document.getElementById('px-lbl').textContent = g.proxyPPG===1.125 ? 'Standard' : 'Cheap';
+  document.getElementById('pr-lbl').textContent = '$'+g.primusCost+'/mo';
+  document.getElementById('primus-display').textContent = '$'+g.primusCost+'/mo';
+  document.getElementById('hb-fixed-display').textContent = g.hbMode==='self' ? '$25/mo' : '—';
+
+  renderMixControls(g);
+  renderSummaryCards(g);
+  renderPlatformTable(g);
+  renderModel(g);
+  renderChart(g);
+}
+
+// ── Mix controls ───────────────────────────────────────────────────────────
+function renderMixControls(g) {
+  const container = document.getElementById('mix-controls');
+  container.innerHTML = platforms.map((p,i) => `
+    <div class="control">
+      <label>${p.name} mix <span id="mix-lbl-${p.id}">${p.mix}%</span></label>
+      <input type="range" min="0" max="100" step="5" value="${p.mix}"
+        oninput="updateMix('${p.id}', this.value)" style="accent-color:${colorOf(i)}">
+    </div>`).join('');
+  updateMixTotal();
+}
+
+function updateMix(id, val) {
+  const p = platforms.find(x=>x.id===id);
+  p.mix = parseInt(val);
+  document.getElementById('mix-lbl-'+id).textContent = val+'%';
+  updateMixTotal();
+  recalcLight();
+}
+
+function updateMixTotal() {
+  const total = platforms.reduce((a,p)=>a+p.mix,0);
+  const el = document.getElementById('mix-total');
+  el.textContent = 'Mix total: '+total+'%';
+  el.className = 'mix-total '+(total===100?'mix-ok':'mix-warn');
+}
+
+function recalcLight() {
+  const g = getGlobals();
+  renderSummaryCards(g);
+  renderPlatformTable(g);
+  renderModel(g);
+  renderChart(g);
+}
+
+// ── Summary cards ──────────────────────────────────────────────────────────
+function renderSummaryCards(g) {
+  const totalMix = platforms.reduce((a,p)=>a+p.mix,0);
+  const blendedCost = platforms.reduce((a,p)=>a+costPerVerif(p,g)*(p.mix/totalMix),0);
+  const blendedRev  = platforms.reduce((a,p)=>a+p.price*(p.mix/totalMix),0);
+  const blendedMargin = (blendedRev-blendedCost)/blendedRev;
+  const totalMoCost = blendedCost*g.vol + g.railMo + g.hbFixed;
+  const totalMoRev  = blendedRev*g.vol;
+  const totalProfit = totalMoRev - totalMoCost;
+
+  const cards = [
+    {label:'Blended cost/verif',  value:fmt(blendedCost,4),       cls: 'val-blue'},
+    {label:'Blended revenue/verif', value:fmt(blendedRev,2),      cls: 'val-blue'},
+    {label:'Blended margin',       value:fmtP(blendedMargin),     cls: getMarginClass(blendedMargin)},
+    {label:'Monthly revenue',      value:fmtB(totalMoRev),        cls: ''},
+    {label:'Monthly cost',         value:fmtB(totalMoCost),       cls: ''},
+    {label:'Monthly profit',       value:fmtB(totalProfit),       cls: totalProfit>0?'val-green':'val-red'},
+  ];
+  document.getElementById('summary-cards').innerHTML = cards.map(c=>
+    `<div class="card"><div class="card-label">${c.label}</div><div class="card-value ${c.cls}">${c.value}</div></div>`
+  ).join('');
+}
+
+// ── Platform table ─────────────────────────────────────────────────────────
+function renderPlatformTable(g) {
+  const totalMix = platforms.reduce((a,p)=>a+p.mix,0);
+  const tbody = document.getElementById('platform-tbody');
+  tbody.innerHTML = platforms.map((p,i) => {
+    const hb  = hbCostPerVerif(p,g);
+    const cpv = costPerVerif(p,g);
+    const mix = totalMix>0 ? p.mix/totalMix : 0;
+    const vol = Math.round(mix*g.vol);
+    const margin = (p.price-cpv)/p.price;
+    const profit = (p.price-cpv)*vol;
+    const mc = getMarginClass(margin);
+    return `<tr>
+      <td><div class="platform-name">
+        <span style="width:8px;height:8px;border-radius:50%;background:${colorOf(i)};display:inline-block;flex-shrink:0"></span>
+        ${p.name}
+        <span class="pill ${p.speed==='slow'?'pill-slow':'pill-fast'}">${p.speed==='slow'?'rate limited':'fast'}</span>
+      </div></td>
+      <td><input class="editable" type="number" value="${p.hrs}" min="0.1" max="8" step="0.1"
+        onchange="updateHrs('${p.id}',this.value)"></td>
+      <td style="color:${p.speed==='slow'?'#f87171':'#7c82a0'}">${fmt(hb,4)}</td>
+      <td class="val-blue">${fmt(cpv,4)}</td>
+      <td><input class="editable" type="number" value="${p.price}" min="0.01" max="10" step="0.01"
+        onchange="updatePrice('${p.id}',this.value)" style="color:#fbbf24;border-color:rgba(251,191,36,0.3)"></td>
+      <td class="${mc}">${fmtP(margin)}</td>
+      <td class="${profit>0?'val-green':'val-red'}">${fmtB(profit)}</td>
+      <td>${platforms.length>1?`<button class="btn-del" onclick="deletePlatform('${p.id}')">×</button>`:''}</td>
+    </tr>`;
+  }).join('');
+
+  // Totals row
+  const blendedCost = totalMix>0 ? platforms.reduce((a,p)=>a+costPerVerif(p,g)*(p.mix/totalMix),0) : 0;
+  const blendedRev  = totalMix>0 ? platforms.reduce((a,p)=>a+p.price*(p.mix/totalMix),0) : 0;
+  const totalProfit = platforms.reduce((a,p)=>{
+    const mix=totalMix>0?p.mix/totalMix:0;
+    return a+(p.price-costPerVerif(p,g))*Math.round(mix*g.vol);
+  },0);
+  const bm = blendedRev>0?(blendedRev-blendedCost)/blendedRev:0;
+  document.getElementById('platform-tfoot').innerHTML = `<tr style="background:var(--surface2);font-weight:600">
+    <td>Blended total</td><td>—</td><td>—</td>
+    <td class="val-blue">${fmt(blendedCost,4)}</td>
+    <td class="val-amber">${fmt(blendedRev,2)}</td>
+    <td class="${getMarginClass(bm)}">${fmtP(bm)}</td>
+    <td class="${totalProfit>0?'val-green':'val-red'}">${fmtB(totalProfit)}</td>
+    <td></td></tr>`;
+}
+
+function updateHrs(id, val) {
+  platforms.find(x=>x.id===id).hrs = parseFloat(val)||0.1;
+  recalcLight();
+}
+function updatePrice(id, val) {
+  platforms.find(x=>x.id===id).price = parseFloat(val)||0.10;
+  recalcLight();
+}
+function deletePlatform(id) {
+  platforms = platforms.filter(x=>x.id!==id);
+  recalc();
+}
+
+// ── Model content ──────────────────────────────────────────────────────────
+function switchTab(t, el) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderModel(getGlobals());
+}
+
+function renderModel(g) {
+  const el = document.getElementById('model-content');
+  const totalMix = platforms.reduce((a,p)=>a+p.mix,0);
+  const blendedCost = totalMix>0 ? platforms.reduce((a,p)=>a+costPerVerif(p,g)*(p.mix/totalMix),0) : 0;
+  const totalMoCost = blendedCost*g.vol + g.railMo + g.hbFixed;
+
+  if (currentTab==='flat') {
+    const prices = [0.25,0.50,0.75,1.00,1.25,1.50];
+    el.innerHTML = `<div class="pricing-table">${prices.map(p=>{
+      const gm=(p-blendedCost)/p;
+      const profit=(p-blendedCost)*g.vol;
+      const cls=gm>0.7?'val-green':gm>0.5?'val-amber':'val-red';
+      const hi=p===0.75?' highlight':'';
+      return `<div class="pricing-row${hi}">
+        <span class="lbl"><strong>${fmt(p,2)}</strong>/proof flat rate</span>
+        <span class="${cls}">${gm>0?fmtP(gm)+' margin · '+fmtB(profit)+'/mo profit':'LOSS'}</span>
+      </div>`;
+    }).join('')}</div>
+    <div class="alert alert-green">At $0.75/proof blended, you're above 70% gross margin with current mix. Adjust the charge/verif per platform in the table above to fine-tune.</div>`;
+  }
+
+  else if (currentTab==='tiered') {
+    const tiers=[
+      {name:'Pilot',fee:49,inc:200,ov:0.75},
+      {name:'Growth',fee:199,inc:1500,ov:0.65},
+      {name:'Scale',fee:599,inc:8000,ov:0.50},
+      {name:'Enterprise',fee:1499,inc:25000,ov:0.35},
+    ];
+    el.innerHTML = `<div class="pricing-table">${tiers.map(t=>{
+      const rev=t.fee+Math.max(0,g.vol-t.inc)*t.ov;
+      const gm=(rev-totalMoCost)/rev;
+      const cls=gm>0.6?'val-green':gm>0.3?'val-amber':'val-red';
+      const hi=t.name==='Growth'?' highlight':'';
+      return `<div class="pricing-row${hi}">
+        <span class="lbl"><strong>${t.name}</strong> · $${t.fee}/mo + $${t.ov.toFixed(2)}/verif after ${t.inc.toLocaleString()} incl.</span>
+        <span class="${cls}">${fmtB(rev)}/mo · ${gm>0?fmtP(gm)+' margin':'LOSS'}</span>
+      </div>`;
+    }).join('')}</div>
+    <div class="alert alert-green">Platform fees cover fixed costs regardless of volume dips — critical for emerging markets. Pilot tier at $49 is low enough to close without approval cycles.</div>`;
+  }
+
+  else {
+    let totalRev=0, totalProfit=0;
+    platforms.forEach(p=>{
+      const mix=totalMix>0?p.mix/totalMix:0;
+      const vol=Math.round(mix*g.vol);
+      totalRev+=p.price*vol;
+      totalProfit+=(p.price-costPerVerif(p,g))*vol;
+    });
+    const bm=totalRev>0?totalProfit/totalRev:0;
+    el.innerHTML = `<div class="pricing-table">
+      ${platforms.map((p,i)=>{
+        const mix=totalMix>0?p.mix/totalMix:0;
+        const vol=Math.round(mix*g.vol);
+        const cpv=costPerVerif(p,g);
+        const gm=(p.price-cpv)/p.price;
+        const profit=(p.price-cpv)*vol;
+        const cls=getMarginClass(gm);
+        return `<div class="pricing-row">
+          <span class="lbl" style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${colorOf(i)};display:inline-block"></span>
+            <strong>${p.name}</strong> · $${p.price.toFixed(2)}/verif · ${vol.toLocaleString()} verifs/mo
+          </span>
+          <span class="${cls}">${fmtP(gm)} margin · ${fmtB(profit)}/mo</span>
+        </div>`;
+      }).join('')}
+      <div class="pricing-row highlight">
+        <span><strong>Blended</strong></span>
+        <span class="${getMarginClass(bm)}">${fmtP(bm)} margin · ${fmtB(totalProfit)}/mo profit</span>
+      </div>
+    </div>
+    <div class="alert alert-amber">Per-platform pricing is the most defensible — you can show clients exactly why Uber costs more. Edit the charge/verif directly in the table above.</div>`;
+  }
+}
+
+// ── Chart ──────────────────────────────────────────────────────────────────
+function renderChart(g) {
+  const vols=[200,500,1000,2000,5000,10000,25000,50000];
+  const datasets = platforms.map((p,i)=>({
+    label: p.name,
+    data: vols.map(v=>{
+      const hb = g.hbMode==='cloud' ? p.hrs*0.10 : 25/v;
+      const c = g.proxyPerV + g.primusPerV + g.railMo/v + hb;
+      return Math.round(((p.price-c)/p.price)*1000)/10;
+    }),
+    borderColor: colorOf(i), backgroundColor: colorOf(i)+'22',
+    tension:0.35, fill:false, pointRadius:3,
+  }));
+
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{ labels:vols.map(v=>v>=1000?(v/1000)+'K':v), datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw.toFixed(1)}% margin`}}},
+      scales:{
+        y:{ ticks:{color:'#7c82a0',callback:v=>v+'%'},
+            grid:{color:'rgba(255,255,255,0.05)'},
+            title:{display:true,text:'Gross margin',color:'#7c82a0',font:{size:11}} },
+        x:{ ticks:{color:'#7c82a0'}, grid:{display:false},
+            title:{display:true,text:'Monthly verifications',color:'#7c82a0',font:{size:11}} }
+      }
+    }
+  });
+
+  document.getElementById('chart-legend').innerHTML = platforms.map((p,i)=>
+    `<span><i style="background:${colorOf(i)}"></i>${p.name}</span>`
+  ).join('');
+}
+
+// ── Add platform modal ─────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function addPlatform() {
+  const name  = document.getElementById('m-name').value.trim();
+  const hrs   = parseFloat(document.getElementById('m-hrs').value)||0.5;
+  const speed = document.getElementById('m-speed').value;
+  const price = parseFloat(document.getElementById('m-price').value)||0.75;
+  const mix   = parseInt(document.getElementById('m-mix').value)||10;
+  if (!name) { alert('Enter a platform name'); return; }
+  platforms.push({ id: 'p'+Date.now(), name, hrs, speed, price, mix });
+  closeModal();
+  document.getElementById('m-name').value='';
+  recalc();
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', e=>{
+  if(e.target===e.currentTarget) closeModal();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+recalc();
+</script>
+</body>
+</html>
