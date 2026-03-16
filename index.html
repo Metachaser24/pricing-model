@@ -125,8 +125,8 @@
     <div class="control">
       <label>Proxy rate<span id="px-lbl"></span></label>
       <select id="proxy-sel" onchange="recalc()">
-        <option value="1.125">Standard — $1.125/10GB</option>
-        <option value="0.1125" selected>Cheap — $0.1125/10GB</option>
+        <option value="10">Standard — $10/GB</option>
+        <option value="1" selected>Cheap — $1/GB</option>
       </select>
     </div>
     <div class="control">
@@ -287,7 +287,7 @@ function recalc() {
   document.getElementById('data-lbl').textContent = g.dataMB+' MB';
   document.getElementById('vol-lbl').textContent = g.vol.toLocaleString();
   document.getElementById('hb-lbl').textContent = g.hbMode==='cloud' ? 'Cloud' : 'Self-hosted';
-  document.getElementById('px-lbl').textContent = g.proxyPPG===1.125 ? 'Standard' : 'Cheap';
+  document.getElementById('px-lbl').textContent = g.proxyPPG===10 ? 'Standard' : 'Cheap';
   document.getElementById('pr-lbl').textContent = '$'+g.primusCost+'/mo';
   document.getElementById('primus-display').textContent = '$'+g.primusCost+'/mo';
   document.getElementById('hb-fixed-display').textContent = g.hbMode==='self' ? '$25/mo' : '—';
